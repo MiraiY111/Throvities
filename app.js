@@ -1,14 +1,14 @@
 // ==================================================================
-// 1. IMPORT MODUL HALAMAN & INITIALIZE DISCORD SDK
+// 1. IMPORT MODUL HALAMAN
 // ==================================================================
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
 
-// Inisialisasi Discord SDK di paling atas agar aplikasi dikenali oleh Discord
-const discordSdk = new window.DiscordSDK.DiscordSDK({
-  client_id: '1514355349132415181' // ⚠️ GANTI PAKAI CLIENT ID DARI DEVELOPER PORTAL KAMU
-});
+// Inisialisasi objek Discord SDK di luar agar bisa dipakai kapan saja
+const discordSdk = window.DiscordSDK ? new window.DiscordSDK.DiscordSDK({
+  client_id: '1514355349132415181' // Client ID aslimu
+}) : null;
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
@@ -99,9 +99,9 @@ navItems.forEach(item => {
 });
 
 // ==================================================================
-// 4. LOAD AWAL APLIKASI (INITIALIZATION) + DISCORD SDK READY
+// 4. LOAD AWAL APLIKASI (INITIALIZATION)
 // ==================================================================
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 ThroveXyra App Main Controller Loaded");
     
     // Tampilkan hanya halaman home di awal, sembunyikan yang lain
@@ -115,31 +115,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // AMANKAN TOMBOL ENTER DI OVERLAY DEPAN
+    // BACKUP LOGIKA KLIK UNTUK OVERLAY SELAMAT DATANG (Memastikan overlay hilang)
     const welcomeOverlay = document.getElementById('welcome-overlay');
     const btnEnterApp = document.getElementById('btn-enter-app');
-    
     if (btnEnterApp && welcomeOverlay) {
         btnEnterApp.addEventListener('click', () => {
-            console.log(" Tombol Mulai Petualangan Berhasil Diklik!");
-            // Menghilangkan overlay selamat datang agar hub utama terlihat
-            welcomeOverlay.style.display = 'none'; 
+            console.log("🎉 Tombol Mulai Petualangan Berhasil Dieksekusi!");
+            welcomeOverlay.style.display = 'none';
         });
     }
 
-    // MASUKKAN LOGIKA DISCORD SDK DI SINI
-    try {
-        if (window.DiscordSDK) {
-            // Beritahu Discord bahwa aplikasi kita sudah siap dimuat
-            await discordSdk.ready();
-            console.log("✅ Discord SDK Is Ready! Iframe sukses di-bypass.");
-        }
-    } catch (error) {
-        console.error("❌ Gagal memuat Discord SDK (Mungkin dibuka di luar Discord):", error);
-    }
-
-    // Jalankan load data awal untuk masing-masing modul setelah SDK siap
+    // Jalankan load data awal untuk masing-masing modul bawaanmu (Biar di web lancar!)
     if (typeof initHome === 'function') initHome();
     if (typeof initGameSupport === 'function') initGameSupport();
     if (typeof initAnthem === 'function') initAnthem(); 
+
+    // Jalankan otentikasi Discord di latar belakang tanpa mengganggu fungsi tombol di atas
+    aktifkanDiscordActivity();
 });
+
+// Fungsi asinkronus agar berjalan mandiri di latar belakang
+async function aktifkanDiscordActivity() {
+    if (discordSdk) {
+        try {
+            await discordSdk.ready();
+            console.log("✅ Discord SDK siap di latar belakang!");
+        } catch (error) {
+            console.warn("⚠️ Gagal memuat Discord SDK (Aman, kemungkinan dibuka di browser biasa):", error);
+        }
+    }
+}
