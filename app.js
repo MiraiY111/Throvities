@@ -119,19 +119,44 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof initAnthem === 'function') initAnthem(); 
 });
 
-const RPC = require('discord-rpc');
-const clientId = 'MASUKKAN_CLIENT_ID_KAMU';
-const client = new RPC.Client({ transport: 'ipc' });
-
-client.on('ready', () => {
-    console.log('Discord RPC Berhasil Terhubung!');
-    client.setActivity({
-        details: 'Listening to Tracks',
-        state: 'ThroveXyra Gate',
-        largeImageKey: 'valorant', // Harus di-upload dulu di Developer Portal Asset
-        largeImageText: 'Valo Activities',
-        instance: false,
-    });
+// 1. Inisialisasi SDK Discord tetap di paling atas
+const discordSdk = new window.DiscordSDK.DiscordSDK({
+  client_id: '1514355349132415181' // Pastikan ini Client ID aslimu
 });
 
-client.login({ clientId }).catch(console.error);
+// 2. Fungsi setup Discord yang aman untuk GitHub Pages
+async function setupDiscordActivity() {
+  try {
+    // Menunggu SDK siap (Wajib agar halaman tidak di-block Discord)
+    await discordSdk.ready();
+    console.log("Discord Activity siap!");
+    
+    // Aktifkan fungsi klik tombol setelah Discord SDK siap
+    aktifkanTombol();
+
+  } catch (error) {
+    console.error("Gagal terhubung ke Discord SDK:", error);
+    // Jika Discord SDK gagal/error, tombol tetap diaktifkan sebagai backup
+    aktifkanTombol();
+  }
+}
+
+// 3. Fungsi khusus untuk mengurus tombol "Mulai Petualangan"
+function aktifkanTombol() {
+  const tombolMulai = document.querySelector('button'); 
+  // ⚠️ CATATAN: Ganti 'button' di atas dengan class/id tombolmu jika ada, 
+  // contoh: document.getElementById('id-tombol-kamu') atau document.querySelector('.class-tombol')
+
+  if (tombolMulai) {
+    tombolMulai.addEventListener('click', () => {
+      console.log("Tombol berhasil diklik!");
+      
+      // Masukkan aksi pindah halaman atau jalankan musikmu di sini, contoh:
+      // window.location.href = 'halaman_utama.html'; 
+      // Atau panggil fungsi dari home.js / anthem.js kamu
+    });
+  }
+}
+
+// Jalankan fungsi saat halaman selesai dimuat
+window.addEventListener('DOMContentLoaded', setupDiscordActivity);
