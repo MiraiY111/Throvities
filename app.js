@@ -5,9 +5,9 @@ import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
 
-// Inisialisasi objek Discord SDK di luar agar bisa dipakai kapan saja
+// Inisialisasi objek Discord SDK secara aman
 const discordSdk = window.DiscordSDK ? new window.DiscordSDK.DiscordSDK({
-  client_id: '1514355349132415181' // Client ID aslimu
+  client_id: '1514355349132415181' // Application ID kamu dari Developer Portal
 }) : null;
 
 // ==================================================================
@@ -21,14 +21,10 @@ const pages = document.querySelectorAll('.page-section');
 // ==================================================================
 // 3. LOGIKA SIDEBAR & NAVIGASI (ROUTER UTAMA)
 // ==================================================================
-
-// Toggle Sidebar (Buka/Tutup Sidebar)
 if (toggleBtn && sidebar) {
     toggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('minimized');
-        
         const icon = toggleBtn.querySelector('i');
-        
         if (sidebar.classList.contains('minimized')) {
             icon.classList.remove('fa-chevron-left');
             icon.classList.add('fa-chevron-right');
@@ -39,16 +35,12 @@ if (toggleBtn && sidebar) {
     });
 }
 
-// Handler Pindah Halaman Berdasarkan Atribut 'data-page'
 navItems.forEach(item => {
     item.addEventListener('click', () => {
         const targetPage = item.getAttribute('data-page'); 
-        
-        // 1. Ubah UI Active pada Menu Sidebar
         navItems.forEach(nav => nav.classList.remove('active'));
         item.classList.add('active');
         
-        // 2. Sembunyikan Semua Halaman Utama
         pages.forEach(page => {
             const pageId = page.id; 
             if (pageId === targetPage || pageId === `page-${targetPage}`) {
@@ -60,9 +52,7 @@ navItems.forEach(item => {
             }
         });
 
-        // ==================================================================
-        // 3. AMANKAN ELEMEN GAME SUPPORT AGAR TIDAK BOCOR KE PAGE LAIN
-        // ==================================================================
+        // AMANKAN ELEMEN GAME SUPPORT
         const mainSelection = document.querySelector('.game-main-selection');
         const valorantDetail = document.getElementById('valorant-detail-view');
         const valorantRoulette = document.getElementById('valorant-roulette-content');
@@ -81,19 +71,14 @@ navItems.forEach(item => {
 
             document.body.style.backgroundImage = '';
             document.body.style.background = '';
-            
             const mainContent = document.querySelector('.main-content'); 
             if (mainContent) {
                 mainContent.style.backgroundImage = '';
                 mainContent.style.background = '';
             }
-
             document.body.classList.remove('valorant-bg', 'game-support-theme'); 
-
             const bgOverlay = document.querySelector('.game-support-bg-overlay');
-            if (bgOverlay) {
-                bgOverlay.style.display = 'none';
-            }
+            if (bgOverlay) bgOverlay.style.display = 'none';
         }
     });
 });
@@ -104,7 +89,7 @@ navItems.forEach(item => {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 ThroveXyra App Main Controller Loaded");
     
-    // Tampilkan hanya halaman home di awal, sembunyikan yang lain
+    // Set tampilan awal halaman utama
     pages.forEach(page => {
         if (page.id === 'page-home' || page.id === 'home') {
             page.classList.add('active-page');
@@ -115,33 +100,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // BACKUP LOGIKA KLIK UNTUK OVERLAY SELAMAT DATANG (Memastikan overlay hilang)
+    // PENGAMAN OVERLAY: Paksa buang overlay jika tombol diklik langsung
     const welcomeOverlay = document.getElementById('welcome-overlay');
     const btnEnterApp = document.getElementById('btn-enter-app');
     if (btnEnterApp && welcomeOverlay) {
-        btnEnterApp.addEventListener('click', () => {
-            console.log("🎉 Tombol Mulai Petualangan Berhasil Dieksekusi!");
+        btnEnterApp.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log("🎯 Overlay dibuka paksa lewat interaksi user.");
             welcomeOverlay.style.display = 'none';
         });
     }
 
-    // Jalankan load data awal untuk masing-masing modul bawaanmu (Biar di web lancar!)
+    // Jalankan pemicu modul-modul halaman bawaan kamu
     if (typeof initHome === 'function') initHome();
     if (typeof initGameSupport === 'function') initGameSupport();
     if (typeof initAnthem === 'function') initAnthem(); 
 
-    // Jalankan otentikasi Discord di latar belakang tanpa mengganggu fungsi tombol di atas
+    // Panggil mesin otentikasi lengkap Discord secara non-blocking
     aktifkanDiscordActivity();
 });
 
-// Fungsi asinkronus agar berjalan mandiri di latar belakang
+// Fungsi Otentikasi Resmi Dua Tahap Discord SDK (Sangat Direkomendasikan)
 async function aktifkanDiscordActivity() {
-    if (discordSdk) {
-        try {
-            await discordSdk.ready();
-            console.log("✅ Discord SDK siap di latar belakang!");
-        } catch (error) {
-            console.warn("⚠️ Gagal memuat Discord SDK (Aman, kemungkinan dibuka di browser biasa):", error);
+    if (!discordSdk) {
+        console.log("ℹ️ Berjalan di web biasa (Discord SDK tidak ditemukan).");
+        return;
+    }
+
+    try {
+        // TAHAP 1: Inisialisasi Handshake awal dengan iframe Discord
+        await discordSdk.ready();
+        console.log("🔹 Tahap 1: Discord SDK Ready.");
+
+        // TAHAP 2: Melakukan otentikasi handshake formal (Membuka gembok interaksi Discord)
+        const auth = await discordSdk.commands.authorize({
+            client_id: '1514355349132415181',
+            response_type: 'code',
+            state: '',
+            prompt: 'none',
+            scope: ['identify', 'guilds'],
+        });
+
+        if (auth) {
+            console.log("✅ Tahap 2: Gembok Iframe Discord Sukses Dibuka!");
         }
+    } catch (error) {
+        console.warn("⚠️ Mode Web Biasa / Gagal Handshake dengan API Discord. Tombol tetap diaktifkan secara mandiri.");
     }
 }
