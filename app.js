@@ -115,11 +115,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // AMANKAN TOMBOL ENTER DI OVERLAY DEPAN
+    const welcomeOverlay = document.getElementById('welcome-overlay');
+    const btnEnterApp = document.getElementById('btn-enter-app');
+    
+    if (btnEnterApp && welcomeOverlay) {
+        btnEnterApp.addEventListener('click', () => {
+            console.log(" Tombol Mulai Petualangan Berhasil Diklik!");
+            // Menghilangkan overlay selamat datang agar hub utama terlihat
+            welcomeOverlay.style.display = 'none'; 
+        });
+    }
+
     // MASUKKAN LOGIKA DISCORD SDK DI SINI
     try {
-        // Beritahu Discord bahwa aplikasi kita sudah siap dimuat
-        await discordSdk.ready();
-        console.log("✅ Discord SDK Is Ready! Tombol-tombol sekarang bisa diklik.");
+        if (window.DiscordSDK) {
+            // Beritahu Discord bahwa aplikasi kita sudah siap dimuat
+            await discordSdk.ready();
+            console.log("✅ Discord SDK Is Ready! Iframe sukses di-bypass.");
+        }
     } catch (error) {
         console.error("❌ Gagal memuat Discord SDK (Mungkin dibuka di luar Discord):", error);
     }
