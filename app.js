@@ -103,16 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // PENGAMAN OVERLAY: Paksa buang overlay jika tombol diklik langsung
-    const welcomeOverlay = document.getElementById('welcome-overlay');
-    const btnEnterApp = document.getElementById('btn-enter-app');
-    if (btnEnterApp && welcomeOverlay) {
-        btnEnterApp.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log("🎯 Overlay dibuka paksa lewat interaksi user.");
-            welcomeOverlay.style.display = 'none';
-        });
-    }
 
     // Jalankan pemicu modul-modul halaman bawaan kamu
     if (typeof initHome === 'function') initHome();
