@@ -5,11 +5,11 @@ import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
 
-// Inisialisasi objek Discord SDK secara aman
-const discordSdk = window.DiscordSDK ? new window.DiscordSDK.DiscordSDK({
-  client_id: '1514355349132415181' // Application ID kamu dari Developer Portal
-}) : null;
-
+const discordSdk = window.DiscordSDK
+  ? new window.DiscordSDK.DiscordSDK({
+      clientId: "1514355349132415181"
+    })
+  : null;
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
 // ==================================================================
@@ -122,29 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Fungsi Otentikasi Resmi Dua Tahap Discord SDK (Sangat Direkomendasikan)
 async function aktifkanDiscordActivity() {
-    if (!discordSdk) {
-        console.log("ℹ️ Berjalan di web biasa (Discord SDK tidak ditemukan).");
-        return;
-    }
+    if (!discordSdk) return;
 
     try {
-        // TAHAP 1: Inisialisasi Handshake awal dengan iframe Discord
         await discordSdk.ready();
-        console.log("🔹 Tahap 1: Discord SDK Ready.");
-
-        // TAHAP 2: Melakukan otentikasi handshake formal (Membuka gembok interaksi Discord)
-        const auth = await discordSdk.commands.authorize({
-            client_id: '1514355349132415181',
-            response_type: 'code',
-            state: '',
-            prompt: 'none',
-            scope: ['identify', 'guilds'],
-        });
-
-        if (auth) {
-            console.log("✅ Tahap 2: Gembok Iframe Discord Sukses Dibuka!");
-        }
-    } catch (error) {
-        console.warn("⚠️ Mode Web Biasa / Gagal Handshake dengan API Discord. Tombol tetap diaktifkan secara mandiri.");
+        console.log("Discord SDK Ready");
+    } catch (err) {
+        console.log(err);
     }
 }
