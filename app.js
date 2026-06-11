@@ -11,7 +11,7 @@ import { initAnthem } from './modules/anthem.js';
 // HAPUS IMPORT "@discord/embedded-app-sdk" YANG LAMA
 // GANTI DENGAN ATURAN DI BAWAH INI:
 const discordSdk = window.discordSdk && window.discordSdk.DiscordSDK 
-    ? new window.discordSdk.DiscordSDK({ clientId: "1514355349132415181" }) 
+    ? new window.discordSdk.DiscordSDK({ clientId: "1514501983728304228" }) 
     : null;
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
