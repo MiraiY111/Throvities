@@ -4,25 +4,24 @@ import { initAnthem } from './modules/anthem.js';
 import { initWutheringWaves } from './modules/wuthering.js';
 import { initNTE } from './modules/nte.js';
 
-// Konfigurasi OAuth2 Discord Web Standar
+// 🌐 KONFIGURASI OAUTH2 DISCORD (Sudah diperbaiki tanpa index.html)
 const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-// 🎯 INISIALISASI DISCORD SDK (VERSI AMAN & ANTI-CRASH)
+// 🎯 INISIALISASI DISCORD SDK (VERSI FIX: Menggunakan Object { clientId })
 let discordInstance = null;
 
 function inisialisasiDiscordAman() {
-    // Cek CDN resmi Discord: biasanya masuk ke window.discordSdk atau window.DiscordSDK
     const SDK = window.discordSdk || window.DiscordSDK;
     
     if (typeof SDK !== 'undefined' && SDK) {
         try {
-            // Jika SDK itu sendiri adalah Class langsung
+            // FIX: Discord SDK wajib menerima object { clientId: ... }
             if (typeof SDK.DiscordSDK === 'function') {
-                return new SDK.DiscordSDK(CLIENT_ID);
+                return new SDK.DiscordSDK({ clientId: CLIENT_ID });
             } else if (typeof SDK === 'function') {
-                return new SDK(CLIENT_ID);
+                return new SDK({ clientId: CLIENT_ID });
             }
         } catch (e) {
             console.error("⚠️ Gagal menginisialisasi Discord SDK Instance:", e);
@@ -89,7 +88,7 @@ navItems.forEach(item => {
             }
         });
 
-        // AMANKAN ELEMEN GAME SUPPORT (VALORANT, WUWA, & NTE)
+        // AMANKAN ELEMEN GAME SUPPORT
         const mainSelection = document.querySelector('.game-main-selection');
         const valorantDetail = document.getElementById('valorant-detail-view');
         const valorantRoulette = document.getElementById('valorant-roulette-content');
@@ -131,89 +130,58 @@ function resetGameSubPages() {
 }
 
 // ==================================================================
-// 4. LOAD AWAL APLIKASI & AUTO LOGIN DISCORD ACTIVITY (EVENT LISTENER UTAMA)
+// 4. LOAD AWAL APLIKASI & ALUR LOG IN OTOMATIS
 // ==================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded");
     
-    // 🔥 Proteksi Firefox: Cek ulang inisialisasi jika CDN baru selesai dimuat
     if (!discordInstance) {
         discordInstance = inisialisasiDiscordAman();
     }
     
-    // 🎯 DETEKSI SANGAT AKURAT: APAKAH BENAR-BENAR DI DALAM DISCORD ACTIVITY?
     const params = new URLSearchParams(window.location.search);
     const isDiscordActivity = (discordInstance && (window.self !== window.top) && params.has('frame_id'));
 
-    // 🎮 JIKA BENAR-BENAR DIBUKA DI DALAM DISCORD ACTIVITY (VOICE CHANNEL)
-    if (isDiscordActivity) {
+    // Cek apakah ada Access Token baru mendarat dari redirect Discord
+    const accessToken = ambilTokenDariHash();
+
+    // SKENARIO A: Ada token di URL (Baru balik dari login sukses)
+    if (accessToken) {
         if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
-        if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan Akun Discord...</span> <i class="fas fa-spinner fa-spin"></i>`;
+        if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan Akun...</span> <i class="fas fa-spinner fa-spin"></i>`;
         
-        // Batas toleransi nunggu koneksi SDK (4 detik)
-        const timeoutAmankan = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("SDK Timeout")), 4000)
-        );
-
-        try {
-            // 1. Tunggu koneksi ke Discord Client selesai
-            await Promise.race([discordInstance.ready(), timeoutAmankan]);
-            console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Client!");
-            
-            // 2. Minta token otorisasi secara otomatis (Tanpa pop-up ribet)
-            const auth = await discordInstance.commands.authorize({
-                client_id: CLIENT_ID,
-                response_type: "code",
-                state: "1",
-                prompt: "none",
-                scope: ["identify", "guilds"],
-            });
-            
-            // 3. Ambil data profil user langsung dari context Discord SDK bawaan
-            // Cara ini instan dan ga perlu nembak fetch API luar lagi!
-            if (discordInstance.context && discordInstance.context.user) {
-                const user = discordInstance.context.user;
-                const username = user.username;
-                const avatarId = user.avatar;
-                const userId = user.id;
-
-                let avatarUrl = "https://cdn.discordapp.com/embed/avatars/0.png";
-                if (avatarId) {
-                    avatarUrl = `https://cdn.discordapp.com/avatars/${userId}/${avatarId}.png?size=64`;
-                }
-
-                // Pasang data akun ke UI Atas (Top Bar)
-                document.querySelector('.top-bar-right .username').innerText = username;
-                document.querySelector('.top-bar-right .avatar').src = avatarUrl;
-
-                // Simpan status login
-                localStorage.setItem('discord_logged_in', 'true');
-                localStorage.setItem('discord_username', username);
-                localStorage.setItem('discord_avatar', avatarUrl);
-            }
-
-            console.log("🟢 [AUTO-LOGIN] Berhasil dapet akun & Masuk Otomatis!");
+        const userBerhasilLogin = await loginPakeDiscordWeb(accessToken);
+        if (userBerhasilLogin) {
             isLoggedIn = true;
-            
-            // 🚀 LANGSUNG MASUK! Hilangkan overlay & putar musik secara otomatis
             if (welcomeOverlay) welcomeOverlay.style.display = 'none';
             pemicuAutoplayMusic();
-
-        } catch (error) {
-            console.warn("⚠️ Mode Otomatis Discord Client Dilewati (Mungkin kamu pakai Discord Web):", error.message);
+        } else {
+            if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
+            alert("Sesi login Discord kadaluarsa. Silakan coba lagi.");
+        }
+    } 
+    // SKENARIO B: Sudah pernah login sebelumnya (Data tersimpan di browser)
+    else if (isLoggedIn) {
+        if (welcomeOverlay) welcomeOverlay.style.display = 'none';
+        const savedName = localStorage.getItem('discord_username');
+        const savedAvatar = localStorage.getItem('discord_avatar');
+        if (savedName) document.querySelector('.top-bar-right .username').innerText = savedName;
+        if (savedAvatar) document.querySelector('.top-bar-right .avatar').src = savedAvatar;
+        pemicuAutoplayMusic();
+    } 
+    // SKENARIO C: Belum login sama sekali
+    else {
+        if (isDiscordActivity) {
+            // 🎮 DI DALAM DISCORD ACTIVITY: Langsung lempar ke auth URL secara otomatis!
+            // Karena user sudah buka di dalam Discord, proses ini instan & hands-free.
+            console.log("🎮 [AUTO-LOGIN] Memicu login otomatis di dalam Discord Activity...");
+            if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
+            if (btnEnterApp) btnEnterApp.innerHTML = `<span>Memuat Profil...</span> <i class="fas fa-spinner fa-spin"></i>`;
             
-            // 🌐 BAN SEREP (UNTUK DISCORD WEB): Gak bisa auto-login, jadi pakai tombol klik manual
-            isLoggedIn = true; // Izinkan navigasi biar web ga ngunci
-            if (btnEnterApp) {
-                btnEnterApp.innerHTML = `<span>Gas, Masuk Ke Beranda!</span> <i class="fas fa-music"></i>`;
-            }
-            
-            // Tambahan: Pasang listener darurat biar pas tombol di klik langsung ngilangin overlay
-            btnEnterApp.onclick = (e) => {
-                e.preventDefault();
-                if (welcomeOverlay) welcomeOverlay.style.display = 'none';
-                pemicuAutoplayMusic();
-            };
+            window.location.href = DISCORD_AUTH_URL;
+        } else {
+            // 🌐 DI BROWSER BIASA: Diam di tempat, tunggu user klik tombol manual
+            if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
         }
     }
     
@@ -231,26 +199,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 🔘 EVENT LISTENER TOMBOL "MULAI PETUALANGAN"
+    // 🔘 EVENT LISTENER BACKUP TOMBOL "MULAI PETUALANGAN"
     if (btnEnterApp) {
         btnEnterApp.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // Kalau di dalam Discord Activity, langsung masuk & mainkan musik
-            if (isDiscordActivity) {
-                console.log("🚀 Membuka aplikasi & memutar lagu via klik langsung...");
-                if (welcomeOverlay) welcomeOverlay.style.display = 'none';
-                pemicuAutoplayMusic();
-                return;
-            }
-
-            // Kalau di browser biasa, arahkan ke login OAuth2 Discord resmi
             console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
             window.location.href = DISCORD_AUTH_URL;
         });
     }
 
-    // LOGIKA DROPDOWN PROFIL (Klik foto profil)
+    // LOGIKA DROPDOWN PROFIL
     if (userProfileTrigger && profileDropdown) {
         userProfileTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -272,7 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // LOGIKA LOG OUT (VERSI AMAN & AUTO REFRESH)
+    // LOGIKA LOG OUT
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.stopPropagation();
