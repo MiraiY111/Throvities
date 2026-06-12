@@ -1,14 +1,22 @@
+// 1. IMPORT MODUL UTAMA (Langsung panggil link ESM sakti pilihanmu!)
+import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.5.0/+esm';
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
 import { initWutheringWaves } from './modules/wuthering.js';
 import { initNTE } from './modules/nte.js';
 
-// 🌐 KONFIGURASI OAUTH2 DISCORD (Sudah diperbaiki tanpa index.html)
+// 🌐 KONFIGURASI OAUTH2 DISCORD
 const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
+// 🎯 INISIALISASI DISCORD SDK (Menggunakan class DiscordSDK hasil import di atas)
+const discordInstance = new DiscordSDK({ clientId: CLIENT_ID });
+
+// ==================================================================
+// 2. SELEKTOR ELEMEN UTAMA & SIDEBAR (Seterusnya ke bawah aman...)
+// ==================================================================
 // 🎯 INISIALISASI DISCORD SDK (VERSI FIX: Menggunakan Object { clientId })
 let discordInstance = null;
 
