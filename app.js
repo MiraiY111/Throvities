@@ -148,19 +148,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 🎮 JIKA BENAR-BENAR DIBUKA DI DALAM DISCORD ACTIVITY (VOICE CHANNEL)
     if (isDiscordActivity) {
         if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
-        if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan...</span> <i class="fas fa-spinner fa-spin"></i>`;
+        if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan Akun Discord...</span> <i class="fas fa-spinner fa-spin"></i>`;
         
-        // ⏱️ BUAT PROMET TIMEOUT (Maksimal nunggu 4 detik biar ga stuck)
+        // Batas toleransi nunggu koneksi SDK (4 detik)
         const timeoutAmankan = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Discord SDK Ready Timeout")), 4000)
+            setTimeout(() => reject(new Error("SDK Timeout")), 4000)
         );
 
         try {
-            // Balapan antara SDK ready vs waktu 4 detik
+            // 1. Tunggu koneksi ke Discord Client selesai
             await Promise.race([discordInstance.ready(), timeoutAmankan]);
-            console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Activity!");
+            console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Client!");
             
-            await discordInstance.commands.authorize({
+            // 2. Minta token otorisasi secara otomatis (Tanpa pop-up ribet)
+            const auth = await discordInstance.commands.authorize({
                 client_id: CLIENT_ID,
                 response_type: "code",
                 state: "1",
@@ -168,47 +169,51 @@ document.addEventListener('DOMContentLoaded', async () => {
                 scope: ["identify", "guilds"],
             });
             
-            console.log("🟢 Login Activity Sukses pas buka!");
+            // 3. Ambil data profil user langsung dari context Discord SDK bawaan
+            // Cara ini instan dan ga perlu nembak fetch API luar lagi!
+            if (discordInstance.context && discordInstance.context.user) {
+                const user = discordInstance.context.user;
+                const username = user.username;
+                const avatarId = user.avatar;
+                const userId = user.id;
+
+                let avatarUrl = "https://cdn.discordapp.com/embed/avatars/0.png";
+                if (avatarId) {
+                    avatarUrl = `https://cdn.discordapp.com/avatars/${userId}/${avatarId}.png?size=64`;
+                }
+
+                // Pasang data akun ke UI Atas (Top Bar)
+                document.querySelector('.top-bar-right .username').innerText = username;
+                document.querySelector('.top-bar-right .avatar').src = avatarUrl;
+
+                // Simpan status login
+                localStorage.setItem('discord_logged_in', 'true');
+                localStorage.setItem('discord_username', username);
+                localStorage.setItem('discord_avatar', avatarUrl);
+            }
+
+            console.log("🟢 [AUTO-LOGIN] Berhasil dapet akun & Masuk Otomatis!");
             isLoggedIn = true;
             
-            if (btnEnterApp) {
-                btnEnterApp.innerHTML = `<span>Gas, Putar Musik & Masuk!</span> <i class="fas fa-music"></i>`;
-            }
-        } catch (error) {
-            console.warn("⚠️ Gagal/Timeout koneksi internal Discord SDK (Mungkin memakai Discord Web):", error.message);
-            
-            // 🚀 BYPASS LOGIC: Jika macet/timeout, paksa aktifkan tombol biar bisa diklik masuk!
-            isLoggedIn = true; // Set true agar bypass pengecekan halaman
-            if (btnEnterApp) {
-                btnEnterApp.innerHTML = `<span>Gas, Putar Musik & Masuk! (Web Mode)</span> <i class="fas fa-music"></i>`;
-            }
-        }
-    } else {
-        // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/FIREFOX/EDGE)
-        console.log("🌐 Membuka di Web Browser Biasa. Mode Discord Activity dinonaktifkan.");
-        const accessToken = ambilTokenDariHash();
+            // 🚀 LANGSUNG MASUK! Hilangkan overlay & putar musik secara otomatis
+            if (welcomeOverlay) welcomeOverlay.style.display = 'none';
+            pemicuAutoplayMusic();
 
-        if (accessToken) {
-            if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan Akun...</span> <i class="fas fa-spinner fa-spin"></i>`;
+        } catch (error) {
+            console.warn("⚠️ Mode Otomatis Discord Client Dilewati (Mungkin kamu pakai Discord Web):", error.message);
             
-            const userBerhasilLogin = await loginPakeDiscordWeb(accessToken);
-            if (userBerhasilLogin) {
-                isLoggedIn = true;
+            // 🌐 BAN SEREP (UNTUK DISCORD WEB): Gak bisa auto-login, jadi pakai tombol klik manual
+            isLoggedIn = true; // Izinkan navigasi biar web ga ngunci
+            if (btnEnterApp) {
+                btnEnterApp.innerHTML = `<span>Gas, Masuk Ke Beranda!</span> <i class="fas fa-music"></i>`;
+            }
+            
+            // Tambahan: Pasang listener darurat biar pas tombol di klik langsung ngilangin overlay
+            btnEnterApp.onclick = (e) => {
+                e.preventDefault();
                 if (welcomeOverlay) welcomeOverlay.style.display = 'none';
                 pemicuAutoplayMusic();
-            } else {
-                if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
-                alert("Sesi login Discord kadaluarsa atau gagal. Silakan coba lagi.");
-            }
-        } else if (isLoggedIn) {
-            if (welcomeOverlay) welcomeOverlay.style.display = 'none';
-            const savedName = localStorage.getItem('discord_username');
-            const savedAvatar = localStorage.getItem('discord_avatar');
-            if (savedName) document.querySelector('.top-bar-right .username').innerText = savedName;
-            if (savedAvatar) document.querySelector('.top-bar-right .avatar').src = savedAvatar;
-            pemicuAutoplayMusic();
-        } else {
-            if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
+            };
         }
     }
     
