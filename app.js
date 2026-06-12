@@ -1,7 +1,7 @@
 // ==================================================================
 // 1. IMPORT MODUL UTAMA & DISCORD SDK LOKAL
 // ==================================================================
-import { DiscordSDK } from '@discord/embedded-app-sdk';
+import { DiscordSDK } from './node_modules/@discord/embedded-app-sdk';
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
