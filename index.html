@@ -8,10 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Hapus script unpkg yang lama, ganti dengan ini di index.html -->
-    <script type="module">
-      import * as DiscordSDK from 'https://esm.sh/@discord/embedded-app-sdk';
-      window.discordSdk = DiscordSDK;
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.0.0/dist/index.js"></script>
 </head>
 <body>
     <div id="welcome-overlay" class="welcome-overlay">
