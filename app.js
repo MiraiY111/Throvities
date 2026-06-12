@@ -7,7 +7,7 @@ import { initNTE } from './modules/nte.js';                  // 🔥 Tambah ini
 // Konfigurasi OAuth2 Discord Web Standar
 const CLIENT_ID = "1514501983728304228";
 // Mengambil URL asal secara otomatis (misal: http://127.0.0.1:5500/index.html)
-const REDIRECT_URI = "http://127.0.0.1:5500/index.html"; 
+const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
 // Inisialisasi Discord SDK untuk Activity
