@@ -6,14 +6,21 @@ import { initNTE } from './modules/nte.js';
 
 // Konfigurasi OAuth2 Discord Web Standar
 const CLIENT_ID = "1514501983728304228";
-// URL Vercel resmi kamu yang sudah disesuaikan otomatis
 const REDIRECT_URI = "https://throvities.vercel.app/index.html"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-// Inisialisasi Discord SDK untuk Activity
-let discordSdk = null;
+// 🎯 KITA GANTI NAMA VARIABELNYA MENJADI discordInstance AGAR TIDAK TABRAKAN SAMA GLOBAL SDK
+let discordInstance = null;
 if (window.discordSdk) {
-    discordSdk = new window.discordSdk.DiscordSDK(CLIENT_ID);
+    try {
+        if (window.discordSdk.DiscordSDK) {
+            discordInstance = new window.discordSdk.DiscordSDK(CLIENT_ID);
+        } else {
+            discordInstance = new window.discordSdk(CLIENT_ID);
+        }
+    } catch (e) {
+        console.error("⚠️ Gagal menginisialisasi Discord SDK Instance:", e);
+    }
 }
 
 // ==================================================================
@@ -71,7 +78,7 @@ navItems.forEach(item => {
             }
         });
 
-        // 🔥 AMANKAN ELEMEN GAME SUPPORT (VALORANT, WUWA, & NTE)
+        // AMANKAN ELEMEN GAME SUPPORT (VALORANT, WUWA, & NTE)
         const mainSelection = document.querySelector('.game-main-selection');
         const valorantDetail = document.getElementById('valorant-detail-view');
         const valorantRoulette = document.getElementById('valorant-roulette-content');
@@ -119,15 +126,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded");
     
     // 🎮 JIKA DIBUKA DI DALAM DISCORD ACTIVITY (VOICE CHANNEL)
-    if (discordSdk && window.self !== window.top) {
+    if (discordInstance && window.self !== window.top) {
         if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
         if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan...</span> <i class="fas fa-spinner fa-spin"></i>`;
         
         try {
-            await discordSdk.ready();
+            await discordInstance.ready();
             console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Activity!");
             
-            await discordSdk.commands.authorize({
+            await discordInstance.commands.authorize({
                 client_id: CLIENT_ID,
                 response_type: "code",
                 state: "1",
@@ -193,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnEnterApp.addEventListener('click', (e) => {
             e.preventDefault();
             
-            if (discordSdk && window.self !== window.top) {
+            if (discordInstance && window.self !== window.top) {
                 console.log("🚀 Membuka aplikasi & memutar lagu via klik langsung...");
                 if (welcomeOverlay) welcomeOverlay.style.display = 'none';
                 pemicuAutoplayMusic();
@@ -309,7 +316,7 @@ async function loginPakeDiscordWeb(token) {
     }
 }
 
-async function updateServerStatsOtomatis() {
+async function updateServerStatsOtotatis() {
     const KODE_INVITE_SERVER = "ckaendJ56V"; 
 
     try {
