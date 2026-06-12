@@ -1,13 +1,13 @@
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
-import { initWutheringWaves } from './modules/wuthering.js'; // 🔥 Tambah ini
-import { initNTE } from './modules/nte.js';                  // 🔥 Tambah ini
+import { initWutheringWaves } from './modules/wuthering.js';
+import { initNTE } from './modules/nte.js';
 
 // Konfigurasi OAuth2 Discord Web Standar
 const CLIENT_ID = "1514501983728304228";
-// Mengambil URL asal secara otomatis (misal: http://127.0.0.1:5500/index.html)
-const REDIRECT_URI = "https://throvities.vercel.app/"; 
+// URL Vercel resmi kamu yang sudah disesuaikan otomatis
+const REDIRECT_URI = "https://throvities.vercel.app/index.html"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
 // Inisialisasi Discord SDK untuk Activity
@@ -71,30 +71,24 @@ navItems.forEach(item => {
             }
         });
 
-        // ==================================================================
         // 🔥 AMANKAN ELEMEN GAME SUPPORT (VALORANT, WUWA, & NTE)
-        // ==================================================================
         const mainSelection = document.querySelector('.game-main-selection');
         const valorantDetail = document.getElementById('valorant-detail-view');
         const valorantRoulette = document.getElementById('valorant-roulette-content');
         const valorantMgmt = document.getElementById('valorant-management-content');
         
-        // Ambil selektor WuWa dan NTE yang tadi kelupaan:
         const wuwaDetail = document.getElementById('wuwa-detail-view');
         const nteDetail = document.getElementById('nte-detail-view');
 
         if (targetPage === 'game-support') {
-            // Jika masuk ke menu game, kembalikan ke grid pilihan utama
             if (mainSelection) mainSelection.classList.remove('hidden');
             if (valorantMgmt) valorantMgmt.classList.remove('hidden');
             
-            // Paksa sembunyikan semua sub-halaman detail agar tidak bentrok render
             if (valorantDetail) valorantDetail.classList.add('hidden');
             if (valorantRoulette) valorantRoulette.classList.add('hidden');
             if (wuwaDetail) wuwaDetail.classList.add('hidden');
             if (nteDetail) nteDetail.classList.add('hidden');
         } else {
-            // Jika pindah ke page lain (Library, Anthem, dll), SEMUA harus sembunyi total!
             if (mainSelection) mainSelection.classList.add('hidden');
             if (valorantDetail) valorantDetail.classList.add('hidden');
             if (valorantRoulette) valorantRoulette.classList.add('hidden');
@@ -102,29 +96,20 @@ navItems.forEach(item => {
             if (wuwaDetail) wuwaDetail.classList.add('hidden');
             if (nteDetail) nteDetail.classList.add('hidden');
 
-            document.body.style.overflow = 'auto'; // Mengembalikan scrollbar bawaan
+            document.body.style.overflow = 'auto';
         }
         resetGameSubPages();
     });
 });
 
-// Buat fungsi pembantu di bagian bawah app.js untuk membersihkan sisa page game
 function resetGameSubPages() {
     const mainSelection = document.querySelector('.game-main-selection');
     const wuwaDetailView = document.getElementById('wuwa-detail-view');
     const nteDetailView = document.getElementById('nte-detail-view');
 
-    // Kembalikan grid pilihan game utama
-    if (mainSelection) {
-        mainSelection.classList.remove('hidden');
-    }
-    // Paksa sembunyikan semua detail view game yang masih melorot terbuka
-    if (wuwaDetailView) {
-        wuwaDetailView.classList.add('hidden');
-    }
-    if (nteDetailView) {
-        nteDetailView.classList.add('hidden');
-    }
+    if (mainSelection) mainSelection.classList.remove('hidden');
+    if (wuwaDetailView) wuwaDetailView.classList.add('hidden');
+    if (nteDetailView) nteDetailView.classList.add('hidden');
 }
 
 // ==================================================================
@@ -142,7 +127,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             await discordSdk.ready();
             console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Activity!");
             
-            // Langsung minta otorisasi pas buka (di background)
             await discordSdk.commands.authorize({
                 client_id: CLIENT_ID,
                 response_type: "code",
@@ -154,7 +138,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("🟢 Login Activity Sukses pas buka!");
             isLoggedIn = true;
             
-            // 🔥 KITA GANTI TEKSNYA DI SINI BIAR GA BINGUNG
             if (btnEnterApp) {
                 btnEnterApp.innerHTML = `<span>Gas, Putar Musik & Masuk!</span> <i class="fas fa-music"></i>`;
             }
@@ -164,15 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
     } else {
-        // ... (Sisa kode ke bawah tetap sama seperti sebelumnya)
-        
-    } else {
         // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/EDGE)
-        if (discordSdk) {
-            console.log("🌐 [WEB] Berjalan di browser biasa.");
-        }
-        
-        // Cek apakah ada Token hasil redirect dari Discord di URL hash (#access_token=...)
         const accessToken = ambilTokenDariHash();
 
         if (accessToken) {
@@ -200,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Panggil stats server Discord otomatis
-    updateServerStatsOtomatis();
+    updateServerStatsOtotatis();
 
     // Set layout halaman awal ke Home
     pages.forEach(page => {
@@ -218,17 +193,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnEnterApp.addEventListener('click', (e) => {
             e.preventDefault();
             
-            // 🎮 JIKA DALAM DISCORD ACTIVITY (Tinggal buka & putar lagu murni tanpa nunggu)
             if (discordSdk && window.self !== window.top) {
                 console.log("🚀 Membuka aplikasi & memutar lagu via klik langsung...");
                 if (welcomeOverlay) welcomeOverlay.style.display = 'none';
-                
-                // Putar lagu otomatis (Pasti tembus karena murni klik langsung tanpa await API)
                 pemicuAutoplayMusic();
                 return;
             }
 
-            // 🌐 JIKA DI WEB BROWSER BIASA
             console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
             window.location.href = DISCORD_AUTH_URL;
         });
@@ -280,14 +251,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof initHome === 'function') initHome();
     if (typeof initGameSupport === 'function') initGameSupport();
     if (typeof initAnthem === 'function') initAnthem(); 
-    if (typeof initWutheringWaves === 'function') initWutheringWaves(); // 🔥 Jalankan WuWa
-    if (typeof initNTE === 'function') initNTE();                       // 🔥 Jalankan NTE
+    if (typeof initWutheringWaves === 'function') initWutheringWaves();
+    if (typeof initNTE === 'function') initNTE();
 });
 
 // ==================================================================
 // 5. HELPER FUNCTIONS UNTUK OAUTH2 DISCORD WEB
 // ==================================================================
-
 function ambilTokenDariHash() {
     const hash = window.location.hash;
     if (hash) {
@@ -339,9 +309,6 @@ async function loginPakeDiscordWeb(token) {
     }
 }
 
-// ==================================================================
-// 6. AUTO FETCH DATA DISCORD - SEJAJAR & HORIZONTAL STYLE
-// ==================================================================
 async function updateServerStatsOtomatis() {
     const KODE_INVITE_SERVER = "ckaendJ56V"; 
 
@@ -367,9 +334,6 @@ async function updateServerStatsOtomatis() {
     }
 }
 
-// ==================================================================
-// 7. 🔥 PEMICU AUTOPLAY MUSIC SETELAH LOGIN
-// ==================================================================
 function pemicuAutoplayMusic() {
     setTimeout(() => {
         const tombolPlay = document.querySelector('.play-btn') || 
@@ -383,5 +347,5 @@ function pemicuAutoplayMusic() {
         } else {
             console.warn("⚠️ Tombol musik tidak ditemukan, pastikan class/id tombol play kamu sesuai.");
         }
-    }, 100); // Dipercepat jedanya karena sudah tidak terhalang async API
+    }, 100);
 }
