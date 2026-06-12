@@ -251,24 +251,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // LOGIKA LOG OUT
+    // ==================================================================
+    // LOGIKA LOG OUT (VERSI AMAN & AUTO REFRESH)
+    // ==================================================================
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.stopPropagation();
-            console.log("🚪 User logged out.");
+            console.log("🚪 User melakukan logout.");
             
+            // 1. Bersihkan semua sesi login Discord dari browser
             localStorage.removeItem('discord_logged_in');
             localStorage.removeItem('discord_username');
             localStorage.removeItem('discord_avatar');
             isLoggedIn = false;
 
-            document.querySelector('.top-bar-right .username').innerText = "Loading...";
-            document.querySelector('.top-bar-right .avatar').src = "https://cdn.discordapp.com/embed/avatars/0.png";
-
-            if (profileDropdown) profileDropdown.style.display = 'none';
-            if (welcomeOverlay) {
-                welcomeOverlay.style.display = 'flex';
-                if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
+            // 2. Sembunyikan dropdown profil biar ga gantung
+            if (profileDropdown) {
+                profileDropdown.classList.add('hidden-dropdown');
+                profileDropdown.style.display = 'none';
             }
+
+            // 3. REFRESH HALAMAN (Trik paling ampuh buat nge-reset state aplikasi)
+            // Begitu halaman ke-refresh, sistem otomatis mendeteksi status login = false
+            // dan langsung mengunci layar ke Welcome Overlay lagi.
+            window.location.reload();
         });
     }
 
