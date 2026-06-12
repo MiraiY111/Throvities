@@ -8,6 +8,11 @@ const CLIENT_ID = "1514501983728304228";
 // Mengambil URL asal secara otomatis (misal: http://127.0.0.1:5500/index.html)
 const REDIRECT_URI = "http://127.0.0.1:5500/index.html"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
+// Copy dan taruh ini di bawah DISCORD_AUTH_URL
+let discordSdk = null;
+if (window.discordSdk) {
+    discordSdk = new window.discordSdk.DiscordSDK(CLIENT_ID);
+}
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
