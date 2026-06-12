@@ -13,14 +13,20 @@ const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIEN
 // 🎯 INISIALISASI DISCORD SDK (VERSI AMAN & ANTI-CRASH DI SEMUA BROWSER)
 let discordInstance = null;
 
+// 🎯 INISIALISASI DISCORD SDK (VERSI KHUSUS EMBEDDED APP SDK RESMI)
+let discordInstance = null;
+
 function inisialisasiDiscordAman() {
-    // Cek apakah object-nya ada di window
-    if (typeof window.discordSdk !== 'undefined' && window.discordSdk) {
+    // Cek CDN resmi Discord: biasanya masuk ke window.discordSdk atau window.DiscordSDK
+    const SDK = window.discordSdk || window.DiscordSDK;
+    
+    if (typeof SDK !== 'undefined' && SDK) {
         try {
-            if (typeof window.discordSdk.DiscordSDK === 'function') {
-                return new window.discordSdk.DiscordSDK(CLIENT_ID);
-            } else if (typeof window.discordSdk === 'function') {
-                return new window.discordSdk(CLIENT_ID);
+            // Jika SDK itu sendiri adalah Class langsung
+            if (typeof SDK.DiscordSDK === 'function') {
+                return new SDK.DiscordSDK(CLIENT_ID);
+            } else if (typeof SDK === 'function') {
+                return new SDK(CLIENT_ID);
             }
         } catch (e) {
             console.error("⚠️ Gagal menginisialisasi Discord SDK Instance:", e);
@@ -28,6 +34,8 @@ function inisialisasiDiscordAman() {
     }
     return null;
 }
+
+discordInstance = inisialisasiDiscordAman();
 
 // Jalankan inisialisasi awal
 discordInstance = inisialisasiDiscordAman();
