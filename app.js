@@ -142,8 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await discordSdk.ready();
             console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Activity!");
             
-            // 🔥 LANGSUNG MINTA OTORISASI PAS BUKA (DI BACKGROUND)
-            console.log("🎮 Memulai Autologin di dalam Discord Activity...");
+            // Langsung minta otorisasi pas buka (di background)
             await discordSdk.commands.authorize({
                 client_id: CLIENT_ID,
                 response_type: "code",
@@ -155,12 +154,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("🟢 Login Activity Sukses pas buka!");
             isLoggedIn = true;
             
-            // Ubah teks tombol jadi normal kembali agar siap diklik user untuk putar musik
-            if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
+            // 🔥 KITA GANTI TEKSNYA DI SINI BIAR GA BINGUNG
+            if (btnEnterApp) {
+                btnEnterApp.innerHTML = `<span>Gas, Putar Musik & Masuk!</span> <i class="fas fa-music"></i>`;
+            }
         } catch (error) {
             console.error("❌ Gagal auto-login di Activity:", error);
             if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
         }
+        
+    } else {
+        // ... (Sisa kode ke bawah tetap sama seperti sebelumnya)
         
     } else {
         // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/EDGE)
