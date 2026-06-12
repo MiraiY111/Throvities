@@ -10,18 +10,27 @@ const REDIRECT_URI = "https://throvities.vercel.app/index.html";
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
 // 🎯 KITA GANTI NAMA VARIABELNYA MENJADI discordInstance AGAR TIDAK TABRAKAN SAMA GLOBAL SDK
+// 🎯 INISIALISASI DISCORD SDK (VERSI AMAN & ANTI-CRASH DI SEMUA BROWSER)
 let discordInstance = null;
-if (window.discordSdk) {
-    try {
-        if (window.discordSdk.DiscordSDK) {
-            discordInstance = new window.discordSdk.DiscordSDK(CLIENT_ID);
-        } else {
-            discordInstance = new window.discordSdk(CLIENT_ID);
+
+function inisialisasiDiscordAman() {
+    // Cek apakah object-nya ada di window
+    if (typeof window.discordSdk !== 'undefined' && window.discordSdk) {
+        try {
+            if (typeof window.discordSdk.DiscordSDK === 'function') {
+                return new window.discordSdk.DiscordSDK(CLIENT_ID);
+            } else if (typeof window.discordSdk === 'function') {
+                return new window.discordSdk(CLIENT_ID);
+            }
+        } catch (e) {
+            console.error("⚠️ Gagal menginisialisasi Discord SDK Instance:", e);
         }
-    } catch (e) {
-        console.error("⚠️ Gagal menginisialisasi Discord SDK Instance:", e);
     }
+    return null;
 }
+
+// Jalankan inisialisasi awal
+discordInstance = inisialisasiDiscordAman();
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
@@ -120,10 +129,15 @@ function resetGameSubPages() {
 }
 
 // ==================================================================
-// 4. LOAD AWAL APLIKASI & AUTO LOGIN DISCORD ACTIVITY
+// 4. LOAD AWAL APLIKASI & AUTO LOGIN DISCORD ACTIVITY (EVENT LISTENER UTAMA)
 // ==================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded");
+    
+    // 🔥 Proteksi Firefox: Cek ulang inisialisasi jika CDN baru selesai dimuat
+    if (!discordInstance) {
+        discordInstance = inisialisasiDiscordAman();
+    }
     
     // 🎮 JIKA DIBUKA DI DALAM DISCORD ACTIVITY (VOICE CHANNEL)
     if (discordInstance && window.self !== window.top) {
@@ -154,7 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
     } else {
-        // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/EDGE)
+        // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/FIREFOX/EDGE)
         const accessToken = ambilTokenDariHash();
 
         if (accessToken) {
@@ -195,11 +209,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Aksi Tombol Mulai Petualangan
+    // 🔘 EVENT LISTENER TOMBOL "MULAI PETUALANGAN"
     if (btnEnterApp) {
         btnEnterApp.addEventListener('click', (e) => {
             e.preventDefault();
             
+            // Kalau di dalam Discord Activity, langsung masuk & mainkan musik
             if (discordInstance && window.self !== window.top) {
                 console.log("🚀 Membuka aplikasi & memutar lagu via klik langsung...");
                 if (welcomeOverlay) welcomeOverlay.style.display = 'none';
@@ -207,6 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            // Kalau di browser biasa, arahkan ke login OAuth2 Discord resmi
             console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
             window.location.href = DISCORD_AUTH_URL;
         });
@@ -255,6 +271,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    // Inisialisasi modul halaman lainnya
     if (typeof initHome === 'function') initHome();
     if (typeof initGameSupport === 'function') initGameSupport();
     if (typeof initAnthem === 'function') initAnthem(); 
