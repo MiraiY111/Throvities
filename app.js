@@ -150,8 +150,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
         if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan...</span> <i class="fas fa-spinner fa-spin"></i>`;
         
+        // ⏱️ BUAT PROMET TIMEOUT (Maksimal nunggu 4 detik biar ga stuck)
+        const timeoutAmankan = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Discord SDK Ready Timeout")), 4000)
+        );
+
         try {
-            await discordInstance.ready();
+            // Balapan antara SDK ready vs waktu 4 detik
+            await Promise.race([discordInstance.ready(), timeoutAmankan]);
             console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Activity!");
             
             await discordInstance.commands.authorize({
@@ -169,10 +175,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnEnterApp.innerHTML = `<span>Gas, Putar Musik & Masuk!</span> <i class="fas fa-music"></i>`;
             }
         } catch (error) {
-            console.error("❌ Gagal auto-login di Activity:", error);
-            if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
+            console.warn("⚠️ Gagal/Timeout koneksi internal Discord SDK (Mungkin memakai Discord Web):", error.message);
+            
+            // 🚀 BYPASS LOGIC: Jika macet/timeout, paksa aktifkan tombol biar bisa diklik masuk!
+            isLoggedIn = true; // Set true agar bypass pengecekan halaman
+            if (btnEnterApp) {
+                btnEnterApp.innerHTML = `<span>Gas, Putar Musik & Masuk! (Web Mode)</span> <i class="fas fa-music"></i>`;
+            }
         }
-        
     } else {
         // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/FIREFOX/EDGE)
         console.log("🌐 Membuka di Web Browser Biasa. Mode Discord Activity dinonaktifkan.");
