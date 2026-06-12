@@ -1,4 +1,6 @@
-// 1. IMPORT MODUL UTAMA (Langsung panggil link ESM sakti pilihanmu!)
+// ==================================================================
+// 1. IMPORT MODUL UTAMA (Menggunakan Link ESM Sakti Pilihanmu)
+// ==================================================================
 import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.5.0/+esm';
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
@@ -6,40 +8,13 @@ import { initAnthem } from './modules/anthem.js';
 import { initWutheringWaves } from './modules/wuthering.js';
 import { initNTE } from './modules/nte.js';
 
-// 🌐 KONFIGURASI OAUTH2 DISCORD
+// 🌐 KONFIGURASI OAUTH2 DISCORD (Sudah bersih tanpa index.html)
 const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-// 🎯 INISIALISASI DISCORD SDK (Menggunakan class DiscordSDK hasil import di atas)
+// 🎯 INISIALISASI DISCORD SDK UTAMA
 const discordInstance = new DiscordSDK({ clientId: CLIENT_ID });
-
-// ==================================================================
-// 2. SELEKTOR ELEMEN UTAMA & SIDEBAR (Seterusnya ke bawah aman...)
-// ==================================================================
-// 🎯 INISIALISASI DISCORD SDK (VERSI FIX: Menggunakan Object { clientId })
-let discordInstance = null;
-
-function inisialisasiDiscordAman() {
-    const SDK = window.discordSdk || window.DiscordSDK;
-    
-    if (typeof SDK !== 'undefined' && SDK) {
-        try {
-            // FIX: Discord SDK wajib menerima object { clientId: ... }
-            if (typeof SDK.DiscordSDK === 'function') {
-                return new SDK.DiscordSDK({ clientId: CLIENT_ID });
-            } else if (typeof SDK === 'function') {
-                return new SDK({ clientId: CLIENT_ID });
-            }
-        } catch (e) {
-            console.error("⚠️ Gagal menginisialisasi Discord SDK Instance:", e);
-        }
-    }
-    return null;
-}
-
-// Jalankan inisialisasi awal
-discordInstance = inisialisasiDiscordAman();
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
@@ -141,14 +116,10 @@ function resetGameSubPages() {
 // 4. LOAD AWAL APLIKASI & ALUR LOG IN OTOMATIS
 // ==================================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("🚀 ThroveXyra Web App Loaded");
-    
-    if (!discordInstance) {
-        discordInstance = inisialisasiDiscordAman();
-    }
+    console.log("🚀 ThroveXyra Web App Loaded dengan SDK ESM murni");
     
     const params = new URLSearchParams(window.location.search);
-    const isDiscordActivity = (discordInstance && (window.self !== window.top) && params.has('frame_id'));
+    const isDiscordActivity = (window.self !== window.top) && params.has('frame_id');
 
     // Cek apakah ada Access Token baru mendarat dari redirect Discord
     const accessToken = ambilTokenDariHash();
@@ -181,7 +152,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     else {
         if (isDiscordActivity) {
             // 🎮 DI DALAM DISCORD ACTIVITY: Langsung lempar ke auth URL secara otomatis!
-            // Karena user sudah buka di dalam Discord, proses ini instan & hands-free.
             console.log("🎮 [AUTO-LOGIN] Memicu login otomatis di dalam Discord Activity...");
             if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
             if (btnEnterApp) btnEnterApp.innerHTML = `<span>Memuat Profil...</span> <i class="fas fa-spinner fa-spin"></i>`;
