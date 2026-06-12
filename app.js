@@ -130,7 +130,15 @@ function resetGameSubPages() {
 // ==================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded");
-    
+    // Copy dan taruh ini di bawah console.log web app loaded
+    if (discordSdk) {
+        try {
+            await discordSdk.ready();
+            console.log("🎮 [ACTIVITY] Sukses terkoneksi ke Discord Activity!");
+        } catch (error) {
+            console.log("🌐 [WEB] Berjalan di browser biasa.");
+        }
+    }
     // Panggil stats server Discord otomatis
     updateServerStatsOtomatis();
     
