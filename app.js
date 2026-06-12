@@ -9,11 +9,7 @@ const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/index.html"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-// 🎯 KITA GANTI NAMA VARIABELNYA MENJADI discordInstance AGAR TIDAK TABRAKAN SAMA GLOBAL SDK
-// 🎯 INISIALISASI DISCORD SDK (VERSI AMAN & ANTI-CRASH DI SEMUA BROWSER)
-let discordInstance = null;
-
-// 🎯 INISIALISASI DISCORD SDK (VERSI KHUSUS EMBEDDED APP SDK RESMI)
+// 🎯 INISIALISASI DISCORD SDK (VERSI AMAN & ANTI-CRASH)
 let discordInstance = null;
 
 function inisialisasiDiscordAman() {
@@ -34,8 +30,6 @@ function inisialisasiDiscordAman() {
     }
     return null;
 }
-
-discordInstance = inisialisasiDiscordAman();
 
 // Jalankan inisialisasi awal
 discordInstance = inisialisasiDiscordAman();
@@ -147,8 +141,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         discordInstance = inisialisasiDiscordAman();
     }
     
-    // 🎮 JIKA DIBUKA DI DALAM DISCORD ACTIVITY (VOICE CHANNEL)
-    if (discordInstance && window.self !== window.top) {
+    // 🎯 DETEKSI SANGAT AKURAT: APAKAH BENAR-BENAR DI DALAM DISCORD ACTIVITY?
+    const params = new URLSearchParams(window.location.search);
+    const isDiscordActivity = (discordInstance && (window.self !== window.top) && params.has('frame_id'));
+
+    // 🎮 JIKA BENAR-BENAR DIBUKA DI DALAM DISCORD ACTIVITY (VOICE CHANNEL)
+    if (isDiscordActivity) {
         if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
         if (btnEnterApp) btnEnterApp.innerHTML = `<span>Menghubungkan...</span> <i class="fas fa-spinner fa-spin"></i>`;
         
@@ -177,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
     } else {
         // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA (CHROME/FIREFOX/EDGE)
+        console.log("🌐 Membuka di Web Browser Biasa. Mode Discord Activity dinonaktifkan.");
         const accessToken = ambilTokenDariHash();
 
         if (accessToken) {
@@ -223,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             
             // Kalau di dalam Discord Activity, langsung masuk & mainkan musik
-            if (discordInstance && window.self !== window.top) {
+            if (isDiscordActivity) {
                 console.log("🚀 Membuka aplikasi & memutar lagu via klik langsung...");
                 if (welcomeOverlay) welcomeOverlay.style.display = 'none';
                 pemicuAutoplayMusic();
@@ -258,30 +257,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // LOGIKA LOG OUT
-    // ==================================================================
     // LOGIKA LOG OUT (VERSI AMAN & AUTO REFRESH)
-    // ==================================================================
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.stopPropagation();
             console.log("🚪 User melakukan logout.");
             
-            // 1. Bersihkan semua sesi login Discord dari browser
             localStorage.removeItem('discord_logged_in');
             localStorage.removeItem('discord_username');
             localStorage.removeItem('discord_avatar');
             isLoggedIn = false;
 
-            // 2. Sembunyikan dropdown profil biar ga gantung
             if (profileDropdown) {
                 profileDropdown.classList.add('hidden-dropdown');
                 profileDropdown.style.display = 'none';
             }
 
-            // 3. REFRESH HALAMAN (Trik paling ampuh buat nge-reset state aplikasi)
-            // Begitu halaman ke-refresh, sistem otomatis mendeteksi status login = false
-            // dan langsung mengunci layar ke Welcome Overlay lagi.
             window.location.reload();
         });
     }
