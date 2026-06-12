@@ -2,13 +2,15 @@ import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
 import { initWutheringWaves } from './modules/wuthering.js'; // 🔥 Tambah ini
-import { initNTE } from './modules/nte.js';                 // 🔥 Tambah ini
+import { initNTE } from './modules/nte.js';                  // 🔥 Tambah ini
+
 // Konfigurasi OAuth2 Discord Web Standar
 const CLIENT_ID = "1514501983728304228";
 // Mengambil URL asal secara otomatis (misal: http://127.0.0.1:5500/index.html)
 const REDIRECT_URI = "http://127.0.0.1:5500/index.html"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
-// Copy dan taruh ini di bawah DISCORD_AUTH_URL
+
+// Inisialisasi Discord SDK untuk Activity
 let discordSdk = null;
 if (window.discordSdk) {
     discordSdk = new window.discordSdk.DiscordSDK(CLIENT_ID);
@@ -130,7 +132,8 @@ function resetGameSubPages() {
 // ==================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded");
-    // Copy dan taruh ini di bawah console.log web app loaded
+    
+    // Cek koneksi Discord Activity
     if (discordSdk) {
         try {
             await discordSdk.ready();
@@ -139,6 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("🌐 [WEB] Berjalan di browser biasa.");
         }
     }
+    
     // Panggil stats server Discord otomatis
     updateServerStatsOtomatis();
     
@@ -154,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             isLoggedIn = true;
             if (welcomeOverlay) welcomeOverlay.style.display = 'none';
             
-            // 🔥 [DITAMBAHKAN]: Putar lagu otomatis setelah user baru sukses login dari Discord
+            // 🔥 Putar lagu otomatis setelah user baru sukses login dari Discord
             pemicuAutoplayMusic();
         } else {
             if (btnEnterApp) btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
@@ -168,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (savedName) document.querySelector('.top-bar-right .username').innerText = savedName;
         if (savedAvatar) document.querySelector('.top-bar-right .avatar').src = savedAvatar;
         
-        // 🔥 [DITAMBAHKAN]: Putar lagu otomatis jika user buka web dan kondisinya sudah auto-login
+        // 🔥 Putar lagu otomatis jika user buka web dan kondisinya sudah auto-login
         pemicuAutoplayMusic();
     } else {
         // Belum login sama sekali, tampilkan overlay utama
@@ -186,10 +190,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Aksi Tombol Mulai Petualangan -> Lempar ke Halaman Login Discord Resmi
+    // Aksi Tombol Mulai Petualangan -> Mendukung Web Browser & Discord Activity
     if (btnEnterApp) {
-        btnEnterApp.addEventListener('click', (e) => {
+        btnEnterApp.addEventListener('click', async (e) => {
             e.preventDefault();
+            
+            // 🎮 JIKA DIBUKA DI DALAM DISCORD ACTIVITY (Voice Channel)
+            if (discordSdk && window.self !== window.top) {
+                console.log("🎮 Memulai Autentikasi di dalam Discord Activity...");
+                try {
+                    btnEnterApp.innerHTML = `<span>Menghubungkan...</span> <i class="fas fa-spinner fa-spin"></i>`;
+                    
+                    // Minta izin login otomatis lewat pop-up internal Discord
+                    const auth = await discordSdk.commands.authorize({
+                        client_id: CLIENT_ID,
+                        response_type: "code",
+                        state: "1",
+                        prompt: "none",
+                        scope: ["identify", "guilds"],
+                    });
+                    
+                    console.log("🟢 Login Activity Sukses!");
+                    isLoggedIn = true;
+                    if (welcomeOverlay) welcomeOverlay.style.display = 'none';
+                    
+                    // Putar lagu otomatis
+                    pemicuAutoplayMusic();
+                    
+                } catch (error) {
+                    console.error("❌ Gagal login di Activity:", error);
+                    btnEnterApp.innerHTML = `<span>Mulai Petualangan</span> <i class="fas fa-chevron-right"></i>`;
+                    alert("Gagal terhubung dengan Discord Activity.");
+                }
+                return;
+            }
+
+            // 🌐 JIKA DIBUKA DI WEB BROWSER BIASA
             console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
             window.location.href = DISCORD_AUTH_URL;
         });
@@ -335,7 +371,7 @@ async function updateServerStatsOtomatis() {
 }
 
 // ==================================================================
-// 7. 🔥 [DITAMBAHKAN]: PEMICU AUTOPLAY MUSIC SETELAH LOGIN
+// 7. 🔥 PEMICU AUTOPLAY MUSIC SETELAH LOGIN
 // ==================================================================
 function pemicuAutoplayMusic() {
     setTimeout(() => {
