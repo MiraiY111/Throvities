@@ -1,7 +1,6 @@
 // ==================================================================
 // 1. IMPORT MODUL UTAMA & DISCORD SDK LOKAL
 // ==================================================================
-// 🟢 PERBAIKAN: Gunakan { DiscordSDK }
 import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.5.0/+esm';
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
@@ -14,8 +13,8 @@ const REDIRECT_URI = "https://throvities.vercel.app/";
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
 let discordInstance = null;
-let isLoggedIn = false;
-
+// 🟢 PERBAIKAN 1: Deklarasikan nilai awal di sini, ambil dari localStorage
+let isLoggedIn = localStorage.getItem('discord_logged_in') === 'true';
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
@@ -31,7 +30,7 @@ const btnLogout = document.getElementById('btn-logout');
 const welcomeOverlay = document.getElementById('welcome-overlay');
 const btnEnterApp = document.getElementById('btn-enter-app');
 
-let isLoggedIn = localStorage.getItem('discord_logged_in') === 'true';
+// 🟢 (Baris let isLoggedIn kedua yang bikin crash sudah DIHAPUS dari sini)
 
 // ==================================================================
 // 3. LOGIKA SIDEBAR & NAVIGASI (ROUTER UTAMA)
@@ -120,8 +119,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded dengan integrasi Discord SDK");
     
     const params = new URLSearchParams(window.location.search);
-    // Deteksi apakah web dibuka di dalam iframe Discord Activity
     const isDiscordActivity = (window.self !== window.top) || params.has('frame_id');
+
+    // 🟢 PERBAIKAN 2: Pasang fungsi klik tombol secara GLOBAL agar selalu responsif di mana saja
+    if (btnEnterApp) {
+        btnEnterApp.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Jika di dalam Discord Client, tombol ini berfungsi sebagai "Bypass/Masuk Manual" jika loading kelamaan
+            if (isDiscordActivity) {
+                console.log("👆 User melewati loading otomatis Discord SDK.");
+                if (welcomeOverlay) welcomeOverlay.style.display = 'none';
+                pemicuAutoplayMusic();
+            } 
+            // Jika di browser biasa, tombol ini berfungsi me-redirect ke OAuth2 Discord
+            else {
+                console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
+                window.location.href = DISCORD_AUTH_URL;
+            }
+        });
+    }
 
     // --------------------------------------------------------------
     // KONDISI A: JALUR UTAMA (DI DALAM DISCORD ACTIVITY GAME/APP)
@@ -158,21 +175,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (welcomeOverlay) welcomeOverlay.style.display = 'none';
             const savedName = localStorage.getItem('discord_username');
             const savedAvatar = localStorage.getItem('discord_avatar');
-            if (savedName) document.querySelector('.top-bar-right .username').innerText = savedName;
-            if (savedAvatar) document.querySelector('.top-bar-right .avatar').src = savedAvatar;
+            
+            const usernameElem = document.querySelector('.top-bar-right .username');
+            const avatarElem = document.querySelector('.top-bar-right .avatar');
+            if (savedName && usernameElem) usernameElem.innerText = savedName;
+            if (savedAvatar && avatarElem) avatarElem.src = savedAvatar;
             pemicuAutoplayMusic();
         } 
         else {
             if (welcomeOverlay) welcomeOverlay.style.display = 'flex';
-        }
-
-        // Tombol manual klik hanya berfungsi di browser biasa
-        if (btnEnterApp) {
-            btnEnterApp.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
-                window.location.href = DISCORD_AUTH_URL;
-            });
         }
     }
     
@@ -243,13 +254,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 5. HELPER FUNCTIONS UTAMA (AUTENTIKASI & SERVERSIDE STATS)
 // ==================================================================
 
-// Jalur Pengambilan Login Otomatis khusus Discord Activity (SDK)
 async function loginPakeDiscordSDK() {
-    // Di dalam fungsi loginPakeDiscordSDK
     try {
-        discordInstance = new DiscordSDK({ clientId: CLIENT_ID }); // <-- Langsung timpa nilainya   
-        
-        // Baru jalankan ready()
+        discordInstance = new DiscordSDK({ clientId: CLIENT_ID });    
         await discordInstance.ready();
         
         const { code } = await discordInstance.commands.authorize({
@@ -269,33 +276,30 @@ async function loginPakeDiscordSDK() {
         const { access_token } = await response.json();
         const auth = await discordInstance.commands.authenticate({ access_token });
         
-        document.querySelector('.top-bar-right .username').innerText = auth.user.username;
-        document.querySelector('.top-bar-right .avatar').src = auth.user.avatar 
-            ? `https://cdn.discordapp.com/avatars/${auth.user.id}/${auth.user.avatar}.png?size=64`
-            : "https://cdn.discordapp.com/embed/avatars/0.png";
+        // 🟢 PERBAIKAN 3: Pengaman elemen DOM agar tidak crash jika class HTML tidak ditemukan
+        const usernameElem = document.querySelector('.top-bar-right .username');
+        const avatarElem = document.querySelector('.top-bar-right .avatar');
+
+        if (usernameElem) usernameElem.innerText = auth.user.username;
+        if (avatarElem) {
+            avatarElem.src = auth.user.avatar 
+                ? `https://cdn.discordapp.com/avatars/${auth.user.id}/${auth.user.avatar}.png?size=64`
+                : "https://cdn.discordapp.com/embed/avatars/0.png";
+        }
 
         isLoggedIn = true;
         if (welcomeOverlay) welcomeOverlay.style.display = 'none';
         pemicuAutoplayMusic();
 
     } catch (error) {
-        // 🟢 KODE AMAN: Kalau kamu tes di browser biasa pakai ?frame_id=1, 
-        // error "instance_id is not defined" akan lari ke sini dan tidak bikin web nge-blank!
         console.error("❌ Kegagalan fatal otentikasi Discord SDK:", error);
         
         if (btnEnterApp) {
-            btnEnterApp.innerHTML = `<span>Mulai Petualangan (Web Fallback)</span> <i class="fas fa-chevron-right"></i>`;
-            
-            btnEnterApp.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
-                window.location.href = DISCORD_AUTH_URL;
-            });
+            btnEnterApp.innerHTML = `<span>Mulai Petualangan (Bypass)</span> <i class="fas fa-chevron-right"></i>`;
         }
     }
 }
 
-// Jalur Hash token untuk Browser biasa
 function ambilTokenDariHash() {
     const hash = window.location.hash;
     if (hash) {
@@ -309,7 +313,6 @@ function ambilTokenDariHash() {
     return null;
 }
 
-// Mengambil data pengguna manual untuk Browser biasa
 async function loginPakeDiscordWeb(token) {
     try {
         const response = await fetch("https://discord.com/api/users/@me", {
@@ -330,8 +333,10 @@ async function loginPakeDiscordWeb(token) {
             avatarUrl = `https://cdn.discordapp.com/avatars/${userId}/${avatarId}.png?size=64`;
         }
 
-        document.querySelector('.top-bar-right .username').innerText = username;
-        document.querySelector('.top-bar-right .avatar').src = avatarUrl;
+        const usernameElem = document.querySelector('.top-bar-right .username');
+        const avatarElem = document.querySelector('.top-bar-right .avatar');
+        if (usernameElem) usernameElem.innerText = username;
+        if (avatarElem) avatarElem.src = avatarUrl;
 
         localStorage.setItem('discord_logged_in', 'true');
         localStorage.setItem('discord_username', username);
