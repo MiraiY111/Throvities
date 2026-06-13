@@ -1,20 +1,21 @@
 // ==================================================================
 // 1. IMPORT MODUL UTAMA & DISCORD SDK LOKAL
 // ==================================================================
-import { DiscordSDK } from './node_modules/@discord/embedded-app-sdk';
+// 🟢 PERBAIKAN: Gunakan { DiscordSDK }
+import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.5.0/+esm';
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
 import { initWutheringWaves } from './modules/wuthering.js';
 import { initNTE } from './modules/nte.js';
 
-// 🌐 KONFIGURASI AUTH DISCORD (Mendukung Web Fallback & SDK Activity)
 const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-// 🎯 INISIALISASI DISCORD SDK UTAMA (Menggunakan format string v2)
-const discordInstance = new DiscordSDK(CLIENT_ID);
+// 🟢 PERBAIKAN: Masukkan ke dalam objek { clientId: ... }
+let discordInstance = null;
+
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
@@ -244,10 +245,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Jalur Pengambilan Login Otomatis khusus Discord Activity (SDK)
 async function loginPakeDiscordSDK() {
+    // Di dalam fungsi loginPakeDiscordSDK
     try {
+        discordInstance = new DiscordSDK({ clientId: CLIENT_ID }); // <-- Langsung timpa nilainya   
+        
+        // Baru jalankan ready()
         await discordInstance.ready();
         
-        // Memunculkan persetujuan akses internal Discord client
         const { code } = await discordInstance.commands.authorize({
             client_id: CLIENT_ID,
             response_type: 'code',
@@ -256,7 +260,6 @@ async function loginPakeDiscordSDK() {
             scope: ['identify', 'guilds']
         });
 
-        // Kirim auth token code ke server backend Vercel (/api/token)
         const response = await fetch('/api/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -264,27 +267,31 @@ async function loginPakeDiscordSDK() {
         });
         
         const { access_token } = await response.json();
-
-        // Menyelesaikan proses jabat tangan otentikasi SDK
         const auth = await discordInstance.commands.authenticate({ access_token });
-        console.log("🎯 Berhasil terhubung via SDK Activity:", auth.user);
-
-        const username = auth.user.username;
-        const avatarUrl = auth.user.avatar 
+        
+        document.querySelector('.top-bar-right .username').innerText = auth.user.username;
+        document.querySelector('.top-bar-right .avatar').src = auth.user.avatar 
             ? `https://cdn.discordapp.com/avatars/${auth.user.id}/${auth.user.avatar}.png?size=64`
             : "https://cdn.discordapp.com/embed/avatars/0.png";
-
-        // Tampilkan identitas user ke UI Top Bar
-        document.querySelector('.top-bar-right .username').innerText = username;
-        document.querySelector('.top-bar-right .avatar').src = avatarUrl;
 
         isLoggedIn = true;
         if (welcomeOverlay) welcomeOverlay.style.display = 'none';
         pemicuAutoplayMusic();
 
     } catch (error) {
+        // 🟢 KODE AMAN: Kalau kamu tes di browser biasa pakai ?frame_id=1, 
+        // error "instance_id is not defined" akan lari ke sini dan tidak bikin web nge-blank!
         console.error("❌ Kegagalan fatal otentikasi Discord SDK:", error);
-        alert("Gagal memuat otentikasi internal Discord Activity.");
+        
+        if (btnEnterApp) {
+            btnEnterApp.innerHTML = `<span>Mulai Petualangan (Web Fallback)</span> <i class="fas fa-chevron-right"></i>`;
+            
+            btnEnterApp.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log("✈️ Mengalihkan ke Halaman Autentikasi Resmi Discord...");
+                window.location.href = DISCORD_AUTH_URL;
+            });
+        }
     }
 }
 
