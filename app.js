@@ -13,8 +13,8 @@ const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-// 🟢 PERBAIKAN: Masukkan ke dalam objek { clientId: ... }
 let discordInstance = null;
+let isLoggedIn = false;
 
 
 // ==================================================================
