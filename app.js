@@ -12,9 +12,6 @@ const CLIENT_ID = "1514501983728304228";
 const REDIRECT_URI = "https://throvities.vercel.app/"; 
 const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=identify`;
 
-let discordInstance = null;
-// 🟢 PERBAIKAN 1: Deklarasikan nilai awal di sini, ambil dari localStorage
-let isLoggedIn = localStorage.getItem('discord_logged_in') === 'true';
 
 // ==================================================================
 // 2. SELEKTOR ELEMEN UTAMA & SIDEBAR
