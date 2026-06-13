@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log("🚀 ThroveXyra Web App Loaded dengan integrasi Discord SDK");
     
     const params = new URLSearchParams(window.location.search);
-    const isDiscordActivity = (window.self !== window.top) || params.has('frame_id');
+    
 
     // 🟢 PERBAIKAN 2: Pasang fungsi klik tombol secara GLOBAL agar selalu responsif di mana saja
     if (btnEnterApp) {
