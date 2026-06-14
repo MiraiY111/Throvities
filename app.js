@@ -1,7 +1,7 @@
 // ==================================================================
 // 1. IMPORT MODUL UTAMA & DISCORD SDK LOKAL
 // ==================================================================
-import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.5.0/+esm';
+
 import { initHome } from './modules/home.js';
 import { initGameSupport } from './modules/gameSupport.js';
 import { initAnthem } from './modules/anthem.js';
@@ -48,10 +48,6 @@ if (toggleBtn && sidebar) {
 
 navItems.forEach(item => {
     item.addEventListener('click', () => {
-        if (!isLoggedIn) {
-            alert("Kamu harus melakukan autentikasi Discord terlebih dahulu!");
-            return;
-        }
 
         const targetPage = item.getAttribute('data-page'); 
         navItems.forEach(nav => nav.classList.remove('active'));
